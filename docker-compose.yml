@@ -1,6 +1,24 @@
 version: "3.9"
 
 services:
+  fleet-api:
+    build: .
+    container_name: fleet-api
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+    depends_on:
+      - fleet-postgres
+    environment:
+      PG_USER: ${PG_USER}
+      PG_PASSWORD: ${PG_PASSWORD}
+      PG_DB: ${PG_DB}
+      PG_PORT: ${PG_PORT}
+      PGADMIN_PORT: ${PGADMIN_PORT}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+
   fleet-postgres:
     image: postgres:15
     container_name: my-postgres
