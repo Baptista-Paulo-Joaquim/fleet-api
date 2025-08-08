@@ -1,25 +1,17 @@
 services:
   fleet-api:
     build: .
-    env_file:
-      - .env
     container_name: fleet-api
     ports:
       - "5000:5000"
     depends_on:
       - fleet-postgres
-    environment:
-      PG_USER: ${PG_USER}
-      PG_PASSWORD: ${PG_PASSWORD}
-      PG_DB: ${PG_DB}
-      PG_PORT: ${PG_PORT}
-      PGADMIN_PORT: ${PGADMIN_PORT}
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    env_file:
+      - .env
 
   fleet-postgres:
     image: postgres:15
-    container_name: my-postgres
+    container_name: fleet-postgres
     environment:
       POSTGRES_USER: ${PG_USER}
       POSTGRES_PASSWORD: ${PG_PASSWORD}
