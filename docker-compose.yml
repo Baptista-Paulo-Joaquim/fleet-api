@@ -1,6 +1,8 @@
 services:
   fleet-api:
     build: .
+    env_file:
+      - .env
     container_name: fleet-api
     ports:
       - "5000:5000"
