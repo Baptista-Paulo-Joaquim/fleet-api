@@ -1,12 +1,12 @@
-# Dockerfile
+# Etapa base
 FROM node:20
 
 WORKDIR /app
 
 COPY package*.json ./
+
 RUN npm install
 
-# Adicione isso aqui
 COPY prisma ./prisma
 RUN npx prisma generate
 
