@@ -1,13 +1,9 @@
-version: "3.9"
-
 services:
   fleet-api:
     build: .
     container_name: fleet-api
     ports:
       - "5000:5000"
-    volumes:
-      - .:/app
     depends_on:
       - fleet-postgres
     environment:

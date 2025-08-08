@@ -11,6 +11,10 @@ const prisma = new PrismaClient();
 const SECRET = "mySecret@2025";
 app.use(express.json());
 
+app.get("/", (req: Request, res: Response) => {
+  res.send("API rodando na VPS 🚀");
+});
+
 // Criar usuário com senha criptografada
 app.post("/signup", async (req: Request, res: Response) => {
   const { name, email, password, type } = req.body;
