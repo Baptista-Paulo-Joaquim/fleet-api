@@ -8,6 +8,7 @@ services:
       - fleet-postgres
     env_file:
       - .env
+    command: ["sh", "-c", "npx prisma migrate deploy && npm start"]
 
   fleet-postgres:
     image: postgres:15

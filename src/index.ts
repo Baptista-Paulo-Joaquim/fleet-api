@@ -228,5 +228,5 @@ app.post("/revoke-permission", async (req, res) => {
 });
 
 app.listen(5000, () => {
-  console.log(`🚚 Fleet API rodando em http://localhost:${5000}`);
+  console.log(`🚚 Fleet API rodando em http://148.230.125.42:${5000}`);
 });
