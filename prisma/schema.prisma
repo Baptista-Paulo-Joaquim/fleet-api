@@ -20,9 +20,11 @@ enum PermissionType {
 }
 
 model Permission {
-  id    String           @id @default(uuid())
-  type  PermissionType   @unique
-  users UserPermission[]
+  id        String           @id @default(uuid())
+  type      PermissionType   @unique
+  users     UserPermission[]
+  createdAt DateTime         @default(now())
+  deletedAt DateTime?
 }
 
 model UserPermission {
@@ -31,6 +33,7 @@ model UserPermission {
   userId       String
   permission   Permission @relation(fields: [permissionId], references: [id])
   permissionId String
+  deletedAt    DateTime?
 }
 
 model User {
@@ -42,6 +45,8 @@ model User {
   vehicles    AssignedVehicle[]
   materials   AssignedMaterial[]
   permissions UserPermission[]
+  createdAt   DateTime           @default(now())
+  deletedAt   DateTime?
 }
 
 model Vehicle {
@@ -49,6 +54,8 @@ model Vehicle {
   model       String
   plateNumber String            @unique
   assignedTo  AssignedVehicle[]
+  createdAt   DateTime          @default(now())
+  deletedAt   DateTime?
 }
 
 model Material {
@@ -56,6 +63,8 @@ model Material {
   name        String
   description String
   assignedTo  AssignedMaterial[]
+  createdAt   DateTime           @default(now())
+  deletedAt   DateTime?
 }
 
 model AssignedVehicle {
@@ -66,6 +75,7 @@ model AssignedVehicle {
   vehicleId    String
   assignedAt   DateTime  @default(now())
   unassignedAt DateTime?
+  deletedAt    DateTime?
 }
 
 model AssignedMaterial {
@@ -76,4 +86,5 @@ model AssignedMaterial {
   materialId   String
   assignedAt   DateTime  @default(now())
   unassignedAt DateTime?
+  deletedAt    DateTime?
 }
