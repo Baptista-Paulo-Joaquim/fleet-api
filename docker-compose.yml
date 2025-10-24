@@ -1,42 +1,26 @@
 services:
-  fleet-api:
-    build: .
-    container_name: fleet-api
-    restart: unless-stopped
-    ports:
-      - "5000:5000"
-    depends_on:
-      - fleet-postgres
-    env_file:
-      - .env
-    command: ["sh", "-c", "npx prisma migrate deploy && npm start"]
-
   fleet-postgres:
-    image: postgres:15
+    image: postgres:16
     container_name: fleet-postgres
-    restart: unless-stopped
+    restart: always
     environment:
-      POSTGRES_USER: ${PG_USER}
-      POSTGRES_PASSWORD: ${PG_PASSWORD}
-      POSTGRES_DB: ${PG_DB}
-    volumes:
-      - fleet-pgdata:/var/lib/postgresql/data
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: fleetdb
     ports:
-      - "${PG_PORT}:5432"
+      - "5432:5433"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
   fleet-pgadmin:
     image: dpage/pgadmin4
-    container_name: my-pgadmin
+    container_name: fleet-pgadmin
+    restart: always
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      PGADMIN_DEFAULT_EMAIL: admin@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: admin
     ports:
-      - "${PGADMIN_PORT}:80"
-    depends_on:
-      - fleet-postgres
-    volumes:
-      - pgadmin-data:/var/lib/pgadmin
+      - "5051:80"
 
 volumes:
-  fleet-pgdata:
-  pgadmin-data:
+  postgres_data:

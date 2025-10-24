@@ -1,32 +1,97 @@
 import express, { Express, Request, Response } from "express";
 import bcrypt from "bcryptjs";
+import morgan from "morgan";
 import jwt from "jsonwebtoken";
-//import cors from "cors";
-import { PermissionType, PrismaClient } from "@prisma/client";
+import cors from "cors";
+import { PermissionType } from "@prisma/client";
 import { authenticate } from "./middleware/auth";
-import { checkPermission } from "./middleware/checkPermission";
+import prismaMiddleware from "./utils/prisma";
+import swaggerUi from "swagger-ui-express";
+import swaggerJSDoc from "swagger-jsdoc";
+//import { checkPermission } from "./middleware/checkPermission";
 
 const app: Express = express();
-const prisma = new PrismaClient();
+
+const swaggerOptions = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "Minha API",
+      version: "1.0.0",
+      description: "Documentação da API do sistema",
+    },
+  },
+  apis: ["./src/**/*.ts"],
+};
+
+const swaggerDocs = swaggerJSDoc(swaggerOptions);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
 const SECRET = "mySecret@2025";
 app.use(express.json());
+app.use(morgan("dev"));
+
+/**
+ * Generates a PDF report for the closing of a cash register.
+ *
+ * @route GET /reports/closing/:id/pdf
+ * @param {Request} req - Express request object containing the cash register ID in params.
+ * @param {Response} res - Express response used to stream the PDF file.
+ * @param {NextFunction} next - Express error handler function.
+ *
+ * @returns {void} Streams the generated PDF to the client.
+ * @throws {AppError} If no report is found or PDF generation fails.
+ */
 
 app.get("/", (req: Request, res: Response) => {
   res.send("API rodando na VPS 🚀");
 });
 
+/**
+ * @openapi
+ * /signup:
+ *   post:
+ *     summary: Cria um novo usuário com senha criptografada
+ *     tags:
+ *       - Usuários
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: João
+ *               email:
+ *                 type: string
+ *                 example: joao@gmail.com
+ *               password:
+ *                 type: string
+ *                 example: 123456
+ *               type:
+ *                 type: string
+ *                 example: STAFF
+ *     responses:
+ *       201:
+ *         description: Usuário criado com sucesso
+ *       400:
+ *         description: Email já em uso
+ */
+
 // Criar usuário com senha criptografada
 app.post("/signup", async (req: Request, res: Response) => {
   const { name, email, password, type } = req.body;
 
-  const existing = await prisma.user.findUnique({ where: { email } });
+  const existing = await prismaMiddleware.user.findUnique({ where: { email } });
   if (existing) {
     return res.status(400).json({ error: "Email já está em uso." });
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  const user = await prisma.user.create({
+  const user = await prismaMiddleware.user.create({
     data: {
       name,
       email,
@@ -44,7 +109,7 @@ app.post("/signup", async (req: Request, res: Response) => {
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await prisma.user.findUnique({
+  const user = await prismaMiddleware.user.findUnique({
     where: { email },
     include: {
       permissions: {
@@ -66,7 +131,7 @@ app.post("/login", async (req, res) => {
     expiresIn: "1d",
   });
 
-  const permissions = user.permissions.map((p) => p.permission.type);
+  const permissions = user.permissions.map((p: any) => p.permission.type);
 
   res.json({
     token,
@@ -82,14 +147,68 @@ app.post("/login", async (req, res) => {
 // Cria veiculo
 app.post("/vehicles", async (req: Request, res: Response) => {
   const { model, plateNumber } = req.body;
-  const vehicle = await prisma.vehicle.create({ data: { model, plateNumber } });
+  const vehicle = await prismaMiddleware.vehicle.create({
+    data: { model, plateNumber },
+  });
   res.json(vehicle);
+});
+
+/**
+ * @openapi
+ * /vehicles/:id:
+ *   delete:
+ *     summary: Elimina um veículo
+ *     tags:
+ *       - Veículos
+ *     responses:
+ *       200:
+ *         description: Veículo apagado com sucesso
+ */
+
+// Exclui veiculo
+app.delete("/vehicles/:id", async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const vehicle = await prismaMiddleware.vehicle.delete({
+    where: { id },
+  });
+  res.json(vehicle);
+});
+
+/**
+ * @openapi
+ * /vehicles:
+ *   get:
+ *     summary: Lista todos os veículos
+ *     tags:
+ *       - Veículos
+ *     responses:
+ *       200:
+ *         description: Lista de veículos retornada com sucesso
+ */
+
+// FindMany Vehicles
+app.get("/vehicles", async (req: Request, res: Response) => {
+  const vehicles = await prismaMiddleware.vehicle.findMany();
+  res.json(vehicles);
+});
+
+// FindMany Vehicles Without filters
+
+app.get("/vehicles/all", async (req: Request, res: Response) => {
+  const vehicles = await prismaMiddleware.vehicle.findMany(); // Prisma original
+  res.json(vehicles);
+});
+
+// Obtem materiais
+app.get("/materials", async (req: Request, res: Response) => {
+  const materials = await prismaMiddleware.material.findMany();
+  res.json(materials);
 });
 
 // Cria material
 app.post("/materials", async (req: Request, res: Response) => {
   const { name, description } = req.body;
-  const material = await prisma.material.create({
+  const material = await prismaMiddleware.material.create({
     data: { name, description },
   });
   res.json(material);
@@ -99,11 +218,11 @@ app.post("/materials", async (req: Request, res: Response) => {
 app.post(
   "/assign-vehicle",
   authenticate,
-  checkPermission("ASSIGN_VEHICLE"),
+  // checkPermission("ASSIGN_VEHICLE"),
   async (req: Request, res: Response) => {
     const { userId, vehicleId } = req.body;
 
-    const alreadyAssigned = await prisma.assignedVehicle.findFirst({
+    const alreadyAssigned = await prismaMiddleware.assignedVehicle.findFirst({
       where: {
         vehicleId,
         unassignedAt: null,
@@ -116,7 +235,7 @@ app.post(
         .json({ error: "Veículo já está atribuído a outro usuário." });
     }
 
-    const vehicleAssignment = await prisma.assignedVehicle.create({
+    const vehicleAssignment = await prismaMiddleware.assignedVehicle.create({
       data: { userId, vehicleId },
     });
     res.json(vehicleAssignment);
@@ -130,7 +249,7 @@ app.patch(
   async (req: Request, res: Response) => {
     const { assignmentId } = req.params;
 
-    const updated = await prisma.assignedVehicle.update({
+    const updated = await prismaMiddleware.assignedVehicle.update({
       where: { id: assignmentId },
       data: { unassignedAt: new Date() },
     });
@@ -142,7 +261,7 @@ app.patch(
 // Atribuir material ao user
 app.post("/assign-material", async (req: Request, res: Response) => {
   const { userId, materialId } = req.body;
-  const materialAssignment = await prisma.assignedMaterial.create({
+  const materialAssignment = await prismaMiddleware.assignedMaterial.create({
     data: { userId, materialId },
   });
   res.json(materialAssignment);
@@ -152,7 +271,7 @@ app.post("/assign-material", async (req: Request, res: Response) => {
 app.patch("/unassign-material/:assignmentId", async (req, res) => {
   const { assignmentId } = req.params;
 
-  const updated = await prisma.assignedMaterial.update({
+  const updated = await prismaMiddleware.assignedMaterial.update({
     where: { id: assignmentId },
     data: { unassignedAt: new Date() },
   });
@@ -162,7 +281,7 @@ app.patch("/unassign-material/:assignmentId", async (req, res) => {
 
 app.get("/vehicle-history/:userId", async (req: Request, res: Response) => {
   const { userId } = req.params;
-  const history = await prisma.assignedVehicle.findMany({
+  const history = await prismaMiddleware.assignedVehicle.findMany({
     where: { userId },
     include: { vehicle: true },
   });
@@ -178,7 +297,7 @@ app.post("/init-permissions", async (req, res) => {
   ];
 
   for (const type of types) {
-    await prisma.permission.upsert({
+    await prismaMiddleware.permission.upsert({
       where: { type },
       update: {},
       create: { type },
@@ -191,20 +310,20 @@ app.post("/init-permissions", async (req, res) => {
 app.post("/grant-permission", async (req, res) => {
   const { userId, permissionType } = req.body;
 
-  const permission = await prisma.permission.findUnique({
+  const permission = await prismaMiddleware.permission.findUnique({
     where: { type: permissionType },
   });
 
   if (!permission) return res.status(400).json({ error: "Permissão inválida" });
 
-  const alreadyHas = await prisma.userPermission.findFirst({
+  const alreadyHas = await prismaMiddleware.userPermission.findFirst({
     where: { userId, permissionId: permission.id },
   });
 
   if (alreadyHas)
     return res.status(400).json({ error: "Já tem essa permissão" });
 
-  await prisma.userPermission.create({
+  await prismaMiddleware.userPermission.create({
     data: { userId, permissionId: permission.id },
   });
 
@@ -214,13 +333,13 @@ app.post("/grant-permission", async (req, res) => {
 app.post("/revoke-permission", async (req, res) => {
   const { userId, permissionType } = req.body;
 
-  const permission = await prisma.permission.findUnique({
+  const permission = await prismaMiddleware.permission.findUnique({
     where: { type: permissionType },
   });
 
   if (!permission) return res.status(400).json({ error: "Permissão inválida" });
 
-  await prisma.userPermission.deleteMany({
+  await prismaMiddleware.userPermission.deleteMany({
     where: { userId, permissionId: permission.id },
   });
 
@@ -228,5 +347,7 @@ app.post("/revoke-permission", async (req, res) => {
 });
 
 app.listen(5000, () => {
-  console.log(`🚚 Fleet API rodando em http://148.230.125.42:${5000}`);
+  console.log(`🚚 Fleet API rodando em http://localhost:${5000}`);
 });
+
+export default app;
