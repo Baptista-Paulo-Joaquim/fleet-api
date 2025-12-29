@@ -1,4 +1,5 @@
-import { includes } from "zod";
+import fs from "fs";
+import path from "path";
 import { prisma } from "../lib/prisma";
 
 export class DocumentService {
@@ -27,7 +28,25 @@ export class DocumentService {
     });
   }
 
-  static delete(id: string) {
-    return prisma.document.delete({ where: { id } });
+  static async delete(id: string) {
+    const photos = await prisma.documentPhoto.findMany({
+      where: { documentId: id },
+    });
+
+    for (const photo of photos) {
+      const filePath = path.join(
+        process.cwd(),
+        "uploads",
+        path.basename(photo.url)
+      );
+
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
+    return prisma.document.delete({
+      where: { id },
+    });
   }
 }
