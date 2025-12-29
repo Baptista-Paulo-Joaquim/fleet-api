@@ -1,23 +1,23 @@
 services:
-  fleet-postgres:
+  identifica-postgres:
     image: postgres:16
-    container_name: fleet-postgres
+    container_name: identifica-postgres
     restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: fleetdb
+      POSTGRES_DB: informamz
     ports:
-      - "5432:5433"
+      - "5431:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  fleet-pgadmin:
+  identifica-pgadmin:
     image: dpage/pgadmin4
-    container_name: fleet-pgadmin
+    container_name: identifica-pgadmin
     restart: always
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@gmail.com
+      PGADMIN_DEFAULT_EMAIL: admin@informamz.gov.mz
       PGADMIN_DEFAULT_PASSWORD: admin
     ports:
       - "5051:80"

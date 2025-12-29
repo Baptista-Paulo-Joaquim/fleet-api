@@ -1,0 +1,7 @@
+model DocumentPhoto {
+    id         String   @id @default(cuid())
+    url        String
+    documentId String
+    document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+    createdAt  DateTime @default(now())
+}

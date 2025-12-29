@@ -1,0 +1,17 @@
+model Document {
+    id             String          @id @default(cuid())
+    ownerName      String
+    documentType   String
+    documentId     String
+    province       String
+    country        String?
+    pickupLocation String
+    expirationDate DateTime
+    foundLocation  String?
+    belongings     String?
+    createdAt      DateTime        @default(now())
+    updatedAt      DateTime        @updatedAt
+    registeredById String
+    registeredBy   User            @relation(fields: [registeredById], references: [id])
+    photos         DocumentPhoto[]
+}
