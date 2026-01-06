@@ -4,6 +4,7 @@ import {
   createDocument,
   updateDocument,
   deleteDocument,
+  deleteDocumentPhoto,
 } from "../controller/document.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { uploadPhotos } from "../controller/document.controller";
@@ -20,8 +21,9 @@ router.delete("/:id", authMiddleware, deleteDocument);
 router.post(
   "/:id/photos",
   authMiddleware,
-  upload.array("photos", 4), // máximo 4 fotos
+  upload.array("photos", 4),
   uploadPhotos
 );
 
+router.delete("/photos/:photoId", authMiddleware, deleteDocumentPhoto);
 export default router;

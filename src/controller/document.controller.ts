@@ -2,6 +2,8 @@ import { Response } from "express";
 import { AuthRequest } from "../middlewares/auth.middleware";
 import { DocumentService } from "../service/document.service";
 import { prisma } from "../lib/prisma";
+import fs from "fs";
+import path from "path";
 
 export const getDocument = async (_req: AuthRequest, res: Response) => {
   try {
@@ -63,5 +65,46 @@ export const uploadPhotos = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Failed to upload photos" });
+  }
+};
+
+export const deleteDocumentPhoto = async (req: AuthRequest, res: Response) => {
+  try {
+    const { photoId } = req.params;
+    const userId = req.user!.userId;
+
+    const photo = await prisma.documentPhoto.findUnique({
+      where: { id: photoId },
+      include: {
+        document: true,
+      },
+    });
+
+    if (!photo) {
+      return res.status(404).json({ message: "Photo not found" });
+    }
+
+    if (photo.document.registeredById !== userId) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const filePath = path.join(
+      process.cwd(),
+      "uploads",
+      path.basename(photo.url)
+    );
+
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    await prisma.documentPhoto.delete({
+      where: { id: photoId },
+    });
+
+    return res.json({ message: "Photo deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Failed to delete photo" });
   }
 };
