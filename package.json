@@ -9,7 +9,7 @@
     "seed": "tsx src/seed/seed.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "vercel-build": "pnpm prisma generate --no-engine && node src/app.js"
+    "vercel-build": "pnpm prisma generate --no-engine && pnpm build"
   },
   "prisma": {
     "schema": "prisma/schema"
