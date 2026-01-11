@@ -23,7 +23,7 @@ app.use("/uploads", express.static("uploads"));
 
 app.use(
   cors({
-    origin: "https://identificamz.vercel.app/",
+    origin: "https://identificamz.vercel.app",
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
